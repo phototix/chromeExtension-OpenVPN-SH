@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Self-Hosted VPN",
+  "version": "1.0",
+  "description": "Connect to your self-hosted OpenVPN-AS server",
+  "permissions": [
+    "proxy",
+    "storage",
+    "downloads"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/disconnected.png",
+      "32": "icons/disconnected.png",
+      "48": "icons/disconnected.png",
+      "128": "icons/disconnected.png"
+    }
+  },
+  "icons": {
+    "16": "icons/disconnected.png",
+    "32": "icons/disconnected.png",
+    "48": "icons/disconnected.png",
+    "128": "icons/disconnected.png"
+  }
+}
