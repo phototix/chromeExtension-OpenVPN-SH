@@ -1,105 +1,173 @@
 let isConnected = false;
 let ovpnConfig = null;
+const activePorts = new Set();
 
-// Load saved config from storage
-chrome.storage.local.get(['ovpnConfig'], function(result) {
-  if (result.ovpnConfig) {
-    ovpnConfig = result.ovpnConfig;
-  }
-});
-
-// Handle connection state changes
+// Update connection state and UI
 function updateConnectionState(connected) {
   isConnected = connected;
   chrome.action.setIcon({
-    path: connected ? "icons/connected.png" : {
-      "16": "icons/connected.png",
-      "32": "icons/connected.png",
-      "48": "icons/connected.png",
-      "128": "icons/connected.png"
+    path: connected ? "icons/connected.png" : "icons/disconnected.png"
+  });
+  broadcastStatus();
+}
+
+function broadcastStatus() {
+  activePorts.forEach(port => {
+    try {
+      port.postMessage({
+        type: "status", 
+        connected: isConnected,
+        config: ovpnConfig?.raw || null
+      });
+    } catch (e) {
+      activePorts.delete(port);
     }
   });
 }
 
-// Handle messages from popup
+function parseOVPNConfig(configText) {
+  if (typeof configText !== 'string') throw new Error("Config must be a string");
+  
+  const config = { 
+    remotes: [],
+    certificates: {},
+    raw: configText
+  };
+
+  const lines = configText.split('\n');
+  let currentSection = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    
+    // Handle sections
+    if (trimmed.startsWith('<')) {
+      if (trimmed.startsWith('<ca>')) currentSection = 'ca';
+      else if (trimmed.startsWith('<cert>')) currentSection = 'cert';
+      else if (trimmed.startsWith('<key>')) currentSection = 'key';
+      else if (trimmed.startsWith('<tls-crypt>')) currentSection = 'tls-crypt';
+      else if (trimmed.startsWith('</')) currentSection = null;
+      continue;
+    }
+
+    // Parse sections
+    if (currentSection) {
+      if (!config.certificates[currentSection]) {
+        config.certificates[currentSection] = '';
+      }
+      config.certificates[currentSection] += line + '\n';
+      continue;
+    }
+
+    // Parse remote servers
+    if (trimmed.startsWith('remote ')) {
+      const parts = trimmed.split(/\s+/);
+      if (parts.length >= 3) {
+        config.remotes.push({
+          host: parts[1],
+          port: parts[2],
+          proto: parts[3] || 'tcp'
+        });
+      }
+    }
+    
+    // Parse auth method
+    if (trimmed.startsWith('auth-user-pass')) {
+      config.auth = 'user-pass';
+    }
+    
+    // Parse cipher
+    if (trimmed.startsWith('cipher ')) {
+      config.cipher = trimmed.split(' ')[1];
+    }
+  }
+
+  if (config.remotes.length === 0) throw new Error("No remote servers found in config");
+  return config;
+}
+
+// Connection management
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === "popup") {
+    activePorts.add(port);
+    
+    // Send initial state
+    port.postMessage({
+      type: "init",
+      connected: isConnected,
+      config: ovpnConfig?.raw || null
+    });
+
+    port.onDisconnect.addListener(() => {
+      activePorts.delete(port);
+    });
+
+    port.onMessage.addListener((msg) => {
+      if (msg.type === "getStatus") {
+        port.postMessage({
+          type: "status",
+          connected: isConnected,
+          config: ovpnConfig?.raw || null
+        });
+      }
+    });
+  }
+});
+
+// Message handling
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "connect") {
-    connectToVPN(request.config);
-    sendResponse({status: "connecting"});
-  } else if (request.action === "disconnect") {
-    disconnectVPN();
-    sendResponse({status: "disconnecting"});
-  } else if (request.action === "getStatus") {
-    sendResponse({connected: isConnected});
-  } else if (request.action === "saveConfig") {
-    saveConfig(request.config);
-    sendResponse({status: "saved"});
+  try {
+    switch (request.action) {
+      case "connect":
+        ovpnConfig = parseOVPNConfig(request.config.raw);
+        chrome.storage.local.set({ovpnConfig: ovpnConfig});
+        updateConnectionState(true);
+        sendResponse({success: true});
+        break;
+        
+      case "disconnect":
+        updateConnectionState(false);
+        sendResponse({success: true});
+        break;
+        
+      case "getStatus":
+        sendResponse({
+          success: true, 
+          connected: isConnected,
+          config: ovpnConfig?.raw || null
+        });
+        break;
+        
+      case "saveConfig":
+        ovpnConfig = parseOVPNConfig(request.config.raw);
+        chrome.storage.local.set({ovpnConfig: ovpnConfig});
+        sendResponse({success: true});
+        break;
+        
+      case "getConfig":
+        sendResponse({
+          success: true,
+          config: ovpnConfig?.raw || null
+        });
+        break;
+        
+      default:
+        sendResponse({success: false, error: "Unknown action"});
+    }
+  } catch (e) {
+    sendResponse({success: false, error: e.message});
   }
   return true;
 });
 
-function connectToVPN(config) {
-  // In a real implementation, this would interface with OpenVPN
-  // For this example, we'll simulate the connection
-  
-  // Parse the .ovpn config
-  try {
-    ovpnConfig = parseOVPNConfig(config);
-    chrome.storage.local.set({ovpnConfig: ovpnConfig});
-    
-    // Set up proxy settings (simplified)
-    chrome.proxy.settings.set({
-      scope: 'regular',
-      value: {
-        mode: 'fixed_servers',
-        rules: {
-          singleProxy: {
-            scheme: 'socks5',
-            host: ovpnConfig.remote,
-            port: ovpnConfig.port || 1080
-          },
-          bypassList: ['localhost', '127.0.0.1']
-        }
-      }
-    });
-    
-    updateConnectionState(true);
-    console.log("Connected to VPN");
-  } catch (e) {
-    console.error("Failed to connect:", e);
-  }
-}
-
-function disconnectVPN() {
-  chrome.proxy.settings.clear({scope: 'regular'});
-  updateConnectionState(false);
-  console.log("Disconnected from VPN");
-}
-
-function saveConfig(config) {
-  ovpnConfig = config;
-  chrome.storage.local.set({ovpnConfig: config});
-}
-
-// Simple OVPN config parser
-function parseOVPNConfig(configText) {
-  const lines = configText.split('\n');
-  const config = {};
-  
-  for (const line of lines) {
-    if (line.startsWith('remote ')) {
-      const parts = line.split(' ');
-      config.remote = parts[1];
-      config.port = parts[2] || 1194;
-    } else if (line.startsWith('proto ')) {
-      config.proto = line.split(' ')[1];
+// Load saved config on startup
+chrome.storage.local.get(['ovpnConfig'], (result) => {
+  if (result.ovpnConfig?.raw) {
+    try {
+      ovpnConfig = parseOVPNConfig(result.ovpnConfig.raw);
+    } catch (e) {
+      console.error("Failed to load saved config:", e);
+      chrome.storage.local.remove(['ovpnConfig']);
     }
-    // Add more parsing as needed
   }
-  
-  if (!config.remote) {
-    throw new Error("No remote server found in config");
-  }
-  
-  return config;
-}
+});

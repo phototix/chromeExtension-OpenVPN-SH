@@ -1,101 +1,298 @@
+/* Main Container Styles */
 body {
-  width: 300px;
-  padding: 15px;
-  font-family: Arial, sans-serif;
-  background-color: #f5f5f5;
+  width: 580px;
+  padding: 20px;
+  font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #f8f9fa;
+  color: #212529;
+  margin: 0;
+  min-height: 400px;
 }
 
 .container {
+  width: 580px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
 }
 
+/* Header Styles */
 h1 {
-  margin: 0;
-  font-size: 18px;
-  color: #333;
+  margin: 0 0 12px 0;
+  font-size: 20px;
   text-align: center;
+  color: #1a73e8;
+  font-weight: 600;
 }
 
 h3 {
-  margin: 10px 0 5px 0;
-  font-size: 14px;
+  margin: 8px 0 6px 0;
+  font-size: 15px;
+  color: #5f6368;
+  font-weight: 500;
 }
 
+/* Status Indicator Styles */
 .status {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
-  border-radius: 4px;
-  font-weight: bold;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .status.connected {
-  background-color: #e6f7e6;
-  color: #2e7d32;
+  background-color: #e6f4ea;
+  color: #137333;
+  border: 1px solid #81c995;
 }
 
 .status.disconnected {
-  background-color: #ffebee;
-  color: #c62828;
+  background-color: #fce8e6;
+  color: #c5221f;
+  border: 1px solid #f5b7b1;
 }
 
 .status-indicator {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  margin-right: 8px;
+  margin-right: 12px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.2);
 }
 
 .status.connected .status-indicator {
-  background-color: #2e7d32;
+  background-color: #137333;
+  animation: pulseConnected 2s infinite;
 }
 
 .status.disconnected .status-indicator {
-  background-color: #c62828;
+  background-color: #c5221f;
 }
 
+@keyframes pulseConnected {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.8; }
+}
+
+/* Configuration Textarea */
 textarea {
   width: 100%;
-  height: 150px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  height: 180px;
+  padding: 12px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
   resize: none;
-  font-family: monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 12px;
+  margin-bottom: 8px;
+  background-color: white;
+  transition: border-color 0.3s;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px #e8f0fe;
+}
+
+/* Button Styles */
+.button-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
 }
 
 button {
-  padding: 8px 12px;
-  background-color: #4285f4;
+  flex: 1;
+  padding: 10px 16px;
+  background-color: #1a73e8;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
 }
 
 button:hover {
-  background-color: #3367d6;
+  background-color: #1765cc;
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
 }
 
 button:disabled {
-  background-color: #cccccc;
+  background-color: #9aa0a6;
   cursor: not-allowed;
+  transform: none;
 }
 
-#connection-controls, #import-export {
-  display: flex;
-  gap: 10px;
+/* Specific Button Styles */
+#connect-btn {
+  background-color: #1a73e8;
 }
 
-#connection-controls button {
-  flex: 1;
+#disconnect-btn {
+  background-color: #d93025;
 }
 
-#import-export button {
-  flex: 1;
+#disconnect-btn:hover {
+  background-color: #c5221f;
+}
+
+#save-config {
+  background-color: #34a853;
+}
+
+#save-config:hover {
+  background-color: #2d9248;
+}
+
+#import-btn {
+  background-color: #fbbc04;
+  color: #202124;
+}
+
+#import-btn:hover {
+  background-color: #e9ab03;
+}
+
+#export-btn {
+  background-color: #9e9e9e;
+}
+
+#export-btn:hover {
+  background-color: #878787;
+}
+
+/* Loading State */
+button.loading {
+  position: relative;
+  color: transparent;
+}
+
+button.loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error Message Styles */
+.error-message {
+  color: #c5221f;
+  background-color: #fce8e6;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  display: none;
+  border-left: 4px solid #d93025;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Connection Details Styles */
+.connection-details {
+  background-color: #e8f0fe;
+  border: 1px solid #d2e3fc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  font-size: 13px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.connection-details h4 {
+  margin: 0 0 8px 0;
+  color: #1a73e8;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.connection-details p {
+  margin: 6px 0;
+  line-height: 1.5;
+}
+
+.connection-details strong {
+  color: #5f6368;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 400px) {
+  body {
+    width: 100%;
+    padding: 15px;
+  }
+  
+  .button-row {
+    flex-direction: column;
+  }
+}
+
+/* Animation for Success Messages */
+.success-message {
+  color: #137333;
+  background-color: #e6f4ea;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  display: none;
+  border-left: 4px solid #34a853;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Tooltip Styles */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 200px;
+  background-color: #202124;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
 }

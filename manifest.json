@@ -4,7 +4,6 @@
   "version": "1.0",
   "description": "Connect to your self-hosted OpenVPN-AS server",
   "permissions": [
-    "proxy",
     "storage",
     "downloads"
   ],

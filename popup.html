@@ -17,18 +17,23 @@
     <div id="config-section">
       <h3>VPN Configuration</h3>
       <textarea id="ovpn-config" placeholder="Paste your .ovpn config here"></textarea>
-      <button id="save-config">Save Config</button>
+      <div class="button-row">
+        <button id="save-config">Save Config</button>
+      </div>
     </div>
     
-    <div id="connection-controls">
+    <div id="connection-controls" class="button-row">
       <button id="connect-btn">Connect</button>
       <button id="disconnect-btn" disabled>Disconnect</button>
     </div>
     
-    <div id="import-export">
+    <div id="import-export" class="button-row">
       <button id="import-btn">Import Config</button>
       <button id="export-btn">Export Config</button>
     </div>
+    
+    <div id="error-display" class="error-message"></div>
+    <div id="connection-details" class="connection-details"></div>
   </div>
   
   <script src="popup.js"></script>
